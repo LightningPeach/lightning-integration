@@ -31,7 +31,7 @@ def postprocess():
     if not os.path.exists('report.json'):
         die("No report found to process")
     report = json.load(open('report.json'))['report']
-    impls = ['eclair', 'lightning', 'lnd', 'ptarmigan']
+    impls = ['eclair', 'lightning', 'lnd', 'ptarmigan', "lpd"]
     report['versions'] = OrderedDict(sorted({i: get_version(i) for i in impls}.items()))
 
     # Any unique random id would do really

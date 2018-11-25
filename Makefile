@@ -16,6 +16,11 @@ src/lightning:
 src/lnd:
 	git clone https://github.com/lightningnetwork/lnd ${GOPATH}/src/github.com/lightningnetwork/lnd
 
+src/lpd:
+	git clone --recurse-submodules https://github.com/LightningPeach/lpd.git src/lpd -b rpc
+	cd src/lpd && mkdir -p python_binding && \
+		python -m grpc_tools.protoc -I./rpc-server/src --python_out=python_binding --grpc_python_out=python_binding rpc-server/src/{common,routing,channel,payment}.proto
+
 src/ptarmigan:
 	git clone https://github.com/nayutaco/ptarmigan.git src/ptarmigan
 	cd src/ptarmigan/; git checkout development
@@ -55,14 +60,20 @@ bin/lnd: src/lnd
 	cd ${GOPATH}/src/github.com/lightningnetwork/lnd; ${GOPATH}/bin/dep ensure; go install . ./cmd/...
 	cp ${GOPATH}/bin/lnd ${GOPATH}/bin/lncli bin/
 
-clean:
-	rm src/lnd/version src/lightning/version src/eclair/version src/ptarmigan/version || true
-	rm bin/* || true
-	cd src/lightning; make clean
-	cd src/eclair; mvn clean
-	cd src/ptarmigan; make distclean
+bin/lpd: src/lpd
+	(cd src/lpd; git rev-parse HEAD) > src/lpd/version
+	cd src/lpd && cargo build --release --package rpc-server
+	cp src/lpd/target/release/rpc-server bin/lpd
 
-clients: bin/lightningd bin/lnd bin/eclair.jar bin/ptarmd
+clean:
+	rm src/lnd/version src/lightning/version src/eclair/version src/ptarmigan/version src/lpd/version || true
+	rm bin/* || true
+	@cd src/lightning && make clean || true
+	@cd src/eclair && mvn clean || true
+	@cd src/ptarmigan && make distclean || true
+	@cd src/lpd && cargo clean || true
+
+clients: bin/lightningd bin/lnd bin/eclair.jar bin/ptarmd bin/lpd
 
 test:
 	# Failure is always an option

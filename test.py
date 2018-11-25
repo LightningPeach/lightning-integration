@@ -7,6 +7,7 @@ from itertools import product
 from lightningd import LightningNode
 from lnaddr import lndecode
 from lnd import LndNode
+from lpd import LpdNode
 from ptarmd import PtarmNode
 from concurrent import futures
 from utils import BitcoinD, BtcD
@@ -21,7 +22,7 @@ import sys
 import tempfile
 import time
 
-impls = [EclairNode, LightningNode, LndNode, PtarmNode]
+impls = [EclairNode, LightningNode, LndNode, PtarmNode, LpdNode]
 
 if TEST_DEBUG:
     logging.basicConfig(level=logging.DEBUG, stream=sys.stdout)
