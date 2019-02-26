@@ -16,9 +16,9 @@ src/lnd:
 	git clone https://github.com/lightningnetwork/lnd src/lnd
 
 src/lpd:
-	git clone --recurse-submodules https://github.com/LightningPeach/lpd.git src/lpd -b rpc
+	git clone --recurse-submodules https://github.com/LightningPeach/lpd.git src/lpd
 	cd src/lpd && mkdir -p python_binding && \
-		python -m grpc_tools.protoc -I./rpc-server/src --python_out=python_binding --grpc_python_out=python_binding rpc-server/src/{common,routing,channel,payment}.proto
+		python -m grpc_tools.protoc -I./rpc/interface --python_out=python_binding --grpc_python_out=python_binding rpc/interface/{common,routing,channel,payment}.proto
 
 src/ptarmigan:
 	git clone https://github.com/nayutaco/ptarmigan.git src/ptarmigan
@@ -61,8 +61,8 @@ bin/lnd: src/lnd
 
 bin/lpd: src/lpd
 	(cd src/lpd; git rev-parse HEAD) > src/lpd/version
-	cd src/lpd && cargo build --release --package rpc-server
-	cp src/lpd/target/release/rpc-server bin/lpd
+	cd src/lpd && cargo build --release --package server
+	cp src/lpd/target/release/server bin/lpd
 
 clean:
 	rm src/lnd/version src/lightning/version src/eclair/version src/ptarmigan/version src/lpd/version || true
