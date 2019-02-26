@@ -111,8 +111,8 @@ def confirm_channel(bitcoind, n1, n2):
     print("Waiting for channel {} -> {} to confirm".format(n1.id(), n2.id()))
     assert n1.id() in n2.peers()
     assert n2.id() in n1.peers()
-    for i in range(30):
-        time.sleep(1)
+    for i in range(10):
+        time.sleep(2)
         if n1.check_channel(n2) and n2.check_channel(n1):
             print("Channel {} -> {} confirmed".format(n1.id(), n2.id()))
             return True
@@ -346,3 +346,37 @@ def test_reconnect(bitcoind, node_factory, impls):
     payment_key = node1.send(req)
     dec = lndecode(req)
     assert(sha256(unhexlify(payment_key)).digest() == dec.paymenthash)
+
+
+@pytest.mark.parametrize("impls", product(impls, repeat=2), ids=idfn)
+def test_reconnect_across_channel_open(bitcoind, node_factory, impls):
+    node1 = node_factory.get_node(implementation=impls[0])
+    node2 = node_factory.get_node(implementation=impls[1])
+    capacity = 10**7
+
+    node1.connect('localhost', node2.daemon.port, node2.id())
+
+    wait_for(lambda: node1.peers(), interval=1)
+    wait_for(lambda: node2.peers(), interval=1)
+
+    node1.addfunds(bitcoind, 2*capacity)
+    time.sleep(5)
+    bitcoind.rpc.generate(10)
+    time.sleep(5)
+
+    node1.openchannel(node2.id(), 'localhost', node2.daemon.port, capacity)
+
+    for i in range(5):
+        node1.bitcoin.rpc.generate(1)
+        time.sleep(1)
+
+    node1.stop()
+
+    for i in range(25):
+        node1.bitcoin.rpc.generate(1)
+        time.sleep(1)
+
+    node1.start()
+    wait_for(lambda: node1.check_channel(node2), timeout=120)
+    wait_for(lambda: node2.check_channel(node1), timeout=120)
+    sync_blockheight(bitcoind, [node1, node2])

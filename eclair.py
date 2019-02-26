@@ -46,7 +46,7 @@ class EclairD(TailableProc):
         self.prefix = 'eclair'
 
         self.cmd_line = [
-            '/usr/lib/jvm/java-8-openjdk-amd64/bin/java',
+            'java',
             '-Declair.datadir={}'.format(lightning_dir),
             '-Dlogback.configurationFile={}'.format(os.path.join(lightning_dir, 'logback.xml')),
             '-jar',
@@ -64,7 +64,7 @@ class EclairD(TailableProc):
 
         replacements = [
             ('"testnet"', '"regtest"'),
-            ('enabled = false', 'enabled = true'),
+            ('enabled = false // disabled by default for security reasons', 'enabled = true'),
             ('password = ""', 'password = "rpcpass"'),
             ('9735', str(port)),
             ('18332', str(self.bitcoind.rpcport)),
@@ -185,7 +185,7 @@ class EclairNode(object):
 
     def invoice(self, amount):
         req = self.rpc._call("receive", [amount, "invoice1"])
-        print(req)
+        logging.debug(req)
         return req
 
     def send(self, req):
@@ -214,9 +214,15 @@ class EclairNode(object):
         self.daemon.start()
         time.sleep(1)
 
+    def stop(self):
+        self.daemon.stop()
+
+    def start(self):
+        self.daemon.start()
+
     def check_route(self, node_id, amount):
         try:
-            r = self.rpc._call("findroute", [node_id])
+            r = self.rpc._call("findroute", [node_id, amount])
         except ValueError as e:
             if (str(e).find("command failed: route not found") > 0):
                 return False

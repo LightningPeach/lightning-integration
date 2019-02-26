@@ -28,6 +28,7 @@ class LightningD(TailableProc):
             '--addr=127.0.0.1:{}'.format(port),
             '--dev-broadcast-interval=500',
             '--dev-bitcoind-poll=1',
+            '--plugin-dir=src/lightning/plugins',
 
             # The following are temporary workarounds
             '--cltv-final=8',
@@ -123,7 +124,12 @@ class LightningNode(object):
             return False
 
     def check_channel(self, remote, require_both=False):
-        """ Make sure that we have an active channel with remote
+        """Make sure that we have an active channel with remote
+
+        `require_both` must be False unless the other side supports
+        sending a `channel_announcement` and `channel_update` on
+        `funding_locked`. This doesn't work for eclair for example.
+
         """
         remote_id = remote.id()
         self_id = self.id()
@@ -174,7 +180,6 @@ class LightningNode(object):
     def invoice(self, amount):
         invoice = self.rpc.invoice(amount, "invoice%d" % (self.invoice_count), "description")
         self.invoice_count += 1
-        print(invoice)
         return invoice['bolt11']
 
     def send(self, req):
@@ -199,6 +204,12 @@ class LightningNode(object):
         time.sleep(5)
         self.daemon.start()
         time.sleep(1)
+
+    def stop(self):
+        self.daemon.stop()
+
+    def start(self):
+        self.daemon.start()
 
     def check_route(self, node_id, amount):
         try:

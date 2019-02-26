@@ -206,6 +206,13 @@ class LndNode(object):
         self.daemon.start()
         self.rpc = LndRpc(self.daemon.rpc_port)
 
+    def stop(self):
+        self.daemon.stop()
+
+    def start(self):
+        self.daemon.start()
+        self.rpc = LndRpc(self.daemon.rpc_port)
+
     def check_route(self, node_id, amount):
         try:
             req = lnrpc.QueryRoutesRequest(pub_key=node_id, amt=int(amount/1000), num_routes=1)
@@ -220,6 +227,6 @@ class LndRpc(object):
 
     def __init__(self, rpc_port):
         self.port = rpc_port
-        cred = grpc.ssl_channel_credentials(open('tls.cert').read())
+        cred = grpc.ssl_channel_credentials(open('tls.cert', 'rb').read())
         channel = grpc.secure_channel('localhost:{}'.format(rpc_port), cred)
         self.stub = lnrpc_grpc.LightningStub(channel)
